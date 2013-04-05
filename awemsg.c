@@ -15,19 +15,9 @@ int main(int argc,char** argv)
 	syslog(LOG_NOTICE,"awesome_panel write tool ready\n");
 	closelog();
 	get_config();
-	//测试对cpu和mem的获取使用内存映射
-	/*if(crt_mmap()!=0)
-	{
-		openlog(argv[0],LOG_PID,LOG_USER);
-		syslog(LOG_NOTICE,"create mmap error\n");
-		closelog();
-		clear_own();
-		exit(0);
-	}*/
 	//为保证正常获取，执行三次
 	for(i=0;i<3;i++)
 	{
-		//if(execvp(weather,av)==-1)
 		if(system(weather)==-1)
 		{
 			openlog(argv[0],LOG_PID,LOG_USER);
@@ -55,12 +45,10 @@ int main(int argc,char** argv)
 		openlog(argv[0],LOG_PID,LOG_USER);
 		syslog(LOG_NOTICE,"show messge error\n");
 		closelog();
-		//clear_own();
 		exit(0);
 	}
 	for(i=0;i<jc;i++)
 		job[i]=0;
-	//sleep(50);
 	while(1)
 	{
 		sleep(2);
@@ -69,17 +57,16 @@ int main(int argc,char** argv)
 			job[i]++;
 			switch(i)
 			{
-				case 0://job 1
+				case 0://job 1 获取天气数据
 					if(job[0]>=tj[0].n)
 					{
 						job[0]=0;
-						//execvp(weather,av);
 						system(weather);
 						format_msg(0);
 						k=1;
 					}
 					break;
-				case 1: //job2-battery
+				case 1: //job2-battery 电池电量
 					if(job[1]>=tj[1].n)
 					{
 						job[1]=0;
@@ -88,7 +75,7 @@ int main(int argc,char** argv)
 						k=1;
 					}
 					break;
-				case 2://cpu
+				case 2://cpu 
 					if(job[2]>=tj[2].n)
 					{
 						job[2]=0;
@@ -122,21 +109,13 @@ int main(int argc,char** argv)
 				openlog(argv[0],LOG_PID,LOG_USER);
 				syslog(LOG_NOTICE,"show messge error#1\n");
 				closelog();
-		//		clear_own();
 				exit(0);
 			}
 		}
-/*		if(job[0]%10==0)
-		{
-				openlog(argv[0],LOG_PID,LOG_USER);
-				syslog(LOG_NOTICE,"normal running\n");
-				closelog();				
-		}*/		
 	}
 	openlog(argv[0],LOG_PID,LOG_USER);
 	syslog(LOG_NOTICE,"now testing over...\n");
 	closelog();
-	//clear_own();
 	exit(0);
 }//}}}
 //{{{ int chg_daemon()
@@ -168,8 +147,8 @@ void get_config()
 	tj[0].n=3601; //0为天气的资料获取索引，轮寻时间为3600秒、1小时
 	tj[1].n=15;  //1为电池电量的获取索引，轮寻时间为20秒
 	tj[2].n=3; //2为CPU频率获取索引，轮寻时间为6秒
-	tj[3].n=3; //3为内存使用索引
-	tj[4].n=4; //4为网络信息索引
+	tj[3].n=3; //3为内存使用索引,轮寻时间6秒
+	tj[4].n=4; //4为网络信息索引，论寻时间8秒
 	for(i=0;i<4;i++)
 		cpu_v[i]=0;
 	net_ud[0]=0;net_ud[1]=0;
@@ -204,10 +183,6 @@ void format_msg(int i)
 		fclose(f);
 		return;
 	}
-	if(i==1)
-	{
-		return;
-	}
 	return;
 }
 //}}}
@@ -237,7 +212,6 @@ void get_batt()//battery get
     if(f==NULL)
     {
 		memcpy(msg[2],"55",3);
-        //printf("err");
         return ;
     }
     i=j=0;k=0;
@@ -248,7 +222,6 @@ void get_batt()//battery get
         if(c!=NULL)
         {
             c+=strlen(power_base);
-            //printf("%s",c);
             i=atoi(c);
             k++;
             goto  lop1;
@@ -257,7 +230,6 @@ void get_batt()//battery get
         if(c!=NULL)
         {
             c+=strlen(power_now);
-            //printf("%s",c);
             j=atoi(c);
             k++;
         }
@@ -271,38 +243,6 @@ lop1:
     snprintf(msg[2],100,"%2.0f%% ",ft*100);
     return ;
 
-}//}}}
-//{{{ void clear_own()
-void clear_own()
-{
-	if(pipef!=NULL)
-		pclose(pipef);
-	if(cpu_area!=NULL)
-		munmap(cpu_area,mem_len);
-	if(mem_area!=NULL)
-		munmap(mem_area,mem_len);
-	if(cpufd!=-1)
-		close(cpufd);
-	if(memfd!=-1)
-		close(memfd);
-	return;
-}//}}}
-//{{{ int crt_mmap()
-int crt_mmap()
-{
-	cpufd=open(cpu_file,O_RDONLY);
-	if(cpufd==-1)
-		return 1;
-	cpu_area=mmap(NULL,mem_len,PROT_READ,MAP_PRIVATE,cpufd,0);
-	if(cpu_area==MAP_FAILED)
-		return 1;
-	memfd=open(mem_file,O_RDONLY);
-	if(memfd==-1)
-		return 1;
-	mem_area=mmap(NULL,mem_len,PROT_READ,MAP_PRIVATE,memfd,0);
-	if(mem_area==MAP_FAILED)
-		return 1;
-	return 0;
 }//}}}
 //{{{ void get_cpu()
 void get_cpu()
