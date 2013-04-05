@@ -43,6 +43,7 @@ int main(int argc,char** argv)
 	get_batt();// 初次运行时获取电量
 	get_cpu();//cpu
 	get_mem();//mem
+	get_net();//net
 	if(disp_msg()==0)
 	{
 		openlog(argv[0],LOG_PID,LOG_USER);
@@ -103,6 +104,14 @@ int main(int argc,char** argv)
 						k=1;
 					}
 					break;
+				case 4://net
+					if(job[4]>=tj[4].n)
+					{
+						job[4]=0;
+						get_net();
+						k=1;
+					}
+					break;
 			};
 		}
 		if(k)
@@ -160,8 +169,11 @@ void get_config()
 	tj[1].n=15;  //1为电池电量的获取索引，轮寻时间为20秒
 	tj[2].n=3; //2为CPU频率获取索引，轮寻时间为6秒
 	tj[3].n=3; //3为内存使用索引
+	tj[4].n=4; //4为网络信息索引
 	for(i=0;i<4;i++)
 		cpu_v[i]=0;
+	net_ud[0]=0;net_ud[1]=0;
+	return;
 }
 //}}}
 //{{{ void format_msg(int i)
@@ -208,7 +220,7 @@ int disp_msg()
 	if(f==NULL)
 		return 1;
 	memset(fmt,0,chlen);
-	snprintf(fmt,chlen,out_msg,"#00ffff",msg[5],msg[4],msg[3],msg[2],msg[1],msg[0]);
+	snprintf(fmt,chlen,out_msg,col_yellow,msg[5],msg[4],msg[3],msg[6],msg[7],msg[2],msg[1],msg[0]);
 	fputs(fmt,f);
 	pclose(f);
 	return 0;
@@ -375,7 +387,8 @@ void get_mem()
 		if(i==5)
 			memcpy(c[1],ch,100);
 	}
-	for(a=0;a<1;a++)
+	fclose(file);
+	for(a=0;a<2;a++)
 	{
 		l=strlen(c[a]);c1=c[a];
 		for(i=0;i<l;i++)
@@ -408,12 +421,83 @@ void get_mem()
 	fot=(float)k[1]/1024;
 	snprintf(msg[4],100,"%0.1fMb ",fot);
 	fot=(float)k[1]/k[0];
-	snprintf(msg[3],100,"%2.2f%% ",fot*100);
+	snprintf(msg[3],100,"%0.2f%% ",fot*100);
 	return;
 }//}}}
 //{{{ void get_net()
 void get_net()
-{
+{//取得文件：/proc/net/dev,数据位于第四行，需要计算两次访问之间字节差以获得进出的流量 1,9
+	FILE *file;
+	int i,j,k,l,m[2],n[2];
+	float fot;
+	char *c1,*c2,ch[300],buf[20];
+	memset(msg[6],0,100);
+	memset(msg[7],0,100);
+	for(i=0;i<2;i++)
+	{
+		m[i]=0;n[i]=0;
+	}
+	file=fopen(net_updown,"r");
+	if(file==NULL)
+	{
+		snprintf(msg[6],100,"00");
+		snprintf(msg[7],100,"00");
+		return ;
+	}
+	for(i=0;i<4;i++)
+	{
+		memset(ch,0,300);
+		fgets(ch,300,file);
+	}
+	fclose(file);c1=ch;k=0;
+	l=strlen(c1);
+	for(j=0;j<l;j++)
+	{
+		if(c1[j]>=0x30 && c1[j]<=0x39)
+		{
+			if(k==1)
+			{
+				c2=c1+j;i=0;
+				while(c2[i]>=0x30 && c2[i]<=0x39)
+					i++;
+				memset(buf,0,20);
+				memcpy(buf,c2,i);
+				m[0]=atoi(buf);
+				j+=i;
+				k++;
+			}
+			else
+			{
+				if(k==9)
+				{
+					c2=c1+j;i=0;
+					while(c2[i]>=0x30 && c2[i]<=0x39)
+						i++;
+					memset(buf,0,20);
+					memcpy(buf,c2,i);
+					m[1]=atoi(buf);
+					break;
+				}
+				if(k!=9)
+				{
+					c2=c1+j;i=0;
+					while(c2[i]>=0x30 && c2[i]<=0x39)
+						i++;
+					j+=i;k++;
+				}
+			}
+		}
+	}
+	n[0]=m[0]-net_ud[0];
+	n[1]=m[1]-net_ud[1];
+	net_ud[0]=m[0];net_ud[1]=m[1];
+	fot=(float)n[0]/1024;
+	snprintf(msg[6],100,"%0.1fKB ",fot);
+	fot=(float)n[1]/1024;
+	snprintf(msg[7],100,"%0.1fKB ",fot);
 	return;
 }//}}}
+
+
+
 
