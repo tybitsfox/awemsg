@@ -1,3 +1,4 @@
+//{{{
 /*一个在awesome的面板上显示类似conky的系统数据程序。
   基本原理：在awesome3.0以上版本可以通过wibox的widget方便的显示一些自定义的信息，本程序既是这一功能的简单应用。
   基本的使用方法为：
@@ -26,7 +27,7 @@
   都是通过本程序获取。
   5、所有数据都是通过/proc /sys这两个系统目录下获得的，由于版本不同可能数据所处位置稍有差异，请注意自己调正。
   					tybitsfox  2013-4-5
- */
+ *///}}}
 #include"clsscr.h"
 //定义监视的项目数量
 #define	 jc			5
@@ -36,7 +37,7 @@
 #define  wfile		"/tmp/wthdata.dat"
 #define	 awesome	"awesome-client"
 //电池电量获取所需
-#define sfile   "/sys/class/power_supply/BAT0/uevent"
+#define sfile   "/sys/class/power_supply/BAT1/uevent"
 #define power_base  "POWER_SUPPLY_ENERGY_FULL="
 #define power_now   "POWER_SUPPLY_ENERGY_NOW="
 //CPU
@@ -53,7 +54,7 @@
 #define  col_yellow	"#ffff00"
 #define	 col_dpink	"#ff00ff"
 //信息显示的格式
-#define	 out_msg	"conkytext.text = \"<span color='%s'>| CPU:%s|内存:%s %s| 流量 ↓%s↑%s| 电量:%s| 泰安 %s %s |</span>\""
+#define	 out_msg	"conkytext.text = \"<span color='%s'>| CPU:%s|内存:%s %s| 流量 ↓%s↑%s| 电量:%s| 泰安 %s %s |</span>\"\n"
 struct T_J
 {
 	int n;          //number of task
