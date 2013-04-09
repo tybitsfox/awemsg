@@ -9,6 +9,7 @@ int main(int argc,char** argv)
 	char* av[]={weather,0};
 	int i,j,job[jc];
 	static int k=0;
+	set_unique(argv[0]);
 	if(chg_daemon()!=0)
 		exit(0);
 	openlog(argv[0],LOG_PID,LOG_USER);
@@ -34,6 +35,7 @@ int main(int argc,char** argv)
 	get_cpu();//cpu
 	get_mem();//mem
 	get_net();//net
+	get_temp();//temperature
 	if(disp_msg()==0)
 	{
 		openlog(argv[0],LOG_PID,LOG_USER);
@@ -94,9 +96,13 @@ int main(int argc,char** argv)
 				case 4://net
 					if(job[4]>=tj[4].n)
 					{
-						job[4]=0;
-						get_net();
-						k=1;
+						job[4]=0;get_net();k=1;
+					}
+					break;
+				case 5:// temperature
+					if(job[5]>=tj[5].n)
+					{
+						job[5]=0;get_temp();k=1;
 					}
 					break;
 			};
@@ -149,6 +155,7 @@ void get_config()
 	tj[2].n=3; //2为CPU频率获取索引，轮寻时间为6秒
 	tj[3].n=3; //3为内存使用索引,轮寻时间6秒
 	tj[4].n=4; //4为网络信息索引，论寻时间8秒
+	tj[5].n=4; //5为cpu温度的索引，轮询时间8秒
 	for(i=0;i<4;i++)
 		cpu_v[i]=0;
 	net_ud[0]=0;net_ud[1]=0;
@@ -195,7 +202,7 @@ int disp_msg()
 	if(f==NULL)
 		return 1;
 	memset(fmt,0,chlen);
-	snprintf(fmt,chlen,out_msg,col_yellow,msg[5],msg[4],msg[3],msg[6],msg[7],msg[2],msg[1],msg[0]);
+	snprintf(fmt,chlen,out_msg,col_yellow,msg[5],msg[8],msg[4],msg[3],msg[6],msg[7],msg[2],msg[1],msg[0]);
 	fputs(fmt,f);
 	pclose(f);
 	return 0;
@@ -437,6 +444,91 @@ void get_net()
 	snprintf(msg[7],100,"%0.1fKB ",fot);
 	return;
 }//}}}
+//{{{ void set_unique(char *c)
+void set_unique(char *c)
+{
+	int fd1,fd2,i,j,k;
+	char buf[100],cmd[100],*ch;
+	pid_t pid;
+	pid=getpid();
+	zero(cmd);
+	ch=strrchr(c,'/');
+	if(ch==NULL)
+	{
+		sys_log(c,"strrchr error\n");
+		return;
+	}
+	memcpy(cmd,ch,strlen(ch));
+	//ch=getenv("_");
+	memcpy(cmd,c,strlen(c));//save path name
+	fd1=open(tmpfile,O_RDONLY|O_CREAT,0644);
+	if(fd1<0)
+	{
+		sys_log(c,"open or create tmpfile error\n");
+		return;
+	}
+	zero(buf);
+	i=read(fd1,buf,sizeof(buf));
+	close(fd1);
+	if(i<=1)//create new
+		goto rep_1;
+	k=atoi(buf);
+	if(k==pid)
+		return;
+	zero(buf);
+	snprintf(buf,sizeof(buf),namefile,k);
+	fd2=open(buf,O_RDONLY);
+	if(fd2<0)
+	{
+		if(errno==2)//没有该进程id对应的文件，该进程已退出
+			return;
+		sys_log(c,"get proc file error\n");
+		return;
+	}
+	zero(buf);
+	i=read(fd2,buf,sizeof(buf));
+	close(fd2);
+	if(strstr(buf,cmd)!=NULL)
+	{//find it
+		kill((pid_t)k,9);
+	}
+rep_1:		
+	fd1=open(tmpfile,O_RDWR|O_TRUNC);
+	if(fd1<0)
+	{
+		sys_log(c,"open file error\n");
+		return;
+	}
+	zero(buf);
+	snprintf(buf,sizeof(buf),"%d",pid);
+	write(fd1,buf,strlen(buf));
+	close(fd1);
+	return;
+}//}}}
+//{{{ void get_temp()
+void get_temp()
+{
+	int i,j,k;
+	FILE *file;
+	char buf[100];
+	zero(msg[8]);
+	file=fopen(cpu_temp,"r");
+	if(file==NULL)
+	{
+		snprintf(msg[8],sizeof(msg[8]),"00 ");
+		return;
+	}
+	zero(buf);
+	fgets(buf,sizeof(buf),file);
+	fclose(file);
+	i=atoi(buf);
+	snprintf(msg[8],sizeof(msg[8]),"%d℃ ",i/1000);
+	return;
+}//}}}
+
+
+
+
 
 
 
