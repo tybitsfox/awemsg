@@ -12,18 +12,14 @@ int main(int argc,char** argv)
 	set_unique(argv[0]);
 	if(chg_daemon()!=0)
 		exit(0);
-	openlog(argv[0],LOG_PID,LOG_USER);
-	syslog(LOG_NOTICE,"awesome_panel write tool ready\n");
-	closelog();
+	sys_log(argv[0],"awesome_panel write tool ready\n");
 	get_config();
 	//为保证正常获取，执行三次
 	for(i=0;i<3;i++)
 	{
 		if(system(weather)==-1)
 		{
-			openlog(argv[0],LOG_PID,LOG_USER);
-			syslog(LOG_NOTICE,"error to get weather\n");
-			closelog();
+			sys_log(argv[0],"error to get weather\n");
 			sleep(1);
 			continue;
 		}
@@ -38,15 +34,11 @@ int main(int argc,char** argv)
 	get_temp();//temperature
 	if(disp_msg()==0)
 	{
-		openlog(argv[0],LOG_PID,LOG_USER);
-		syslog(LOG_NOTICE,fmt);
-		closelog();
+		sys_log(argv[0],fmt);
 	}	
 	else
 	{
-		openlog(argv[0],LOG_PID,LOG_USER);
-		syslog(LOG_NOTICE,"show messge error\n");
-		closelog();
+		sys_log(argv[0],"show messge error\n");
 		exit(0);
 	}
 	for(i=0;i<jc;i++)
@@ -112,16 +104,12 @@ int main(int argc,char** argv)
 			k=0;
 			if(disp_msg()!=0)
 			{
-				openlog(argv[0],LOG_PID,LOG_USER);
-				syslog(LOG_NOTICE,"show messge error#1\n");
-				closelog();
+				sys_log(argv[0],"show messge error#1\n");
 				exit(0);
 			}
 		}
 	}
-	openlog(argv[0],LOG_PID,LOG_USER);
-	syslog(LOG_NOTICE,"now testing over...\n");
-	closelog();
+	sys_log(argv[0],"now testing over...\n");
 	exit(0);
 }//}}}
 //{{{ int chg_daemon()
