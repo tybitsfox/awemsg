@@ -61,7 +61,7 @@
 #define  tmpfile	"/tmp/awemsg_tmp.dat"
 #define  namefile	"/proc/%d/cmdline"
 //信息显示的格式
-#define	 out_msg	"conkytext.text = \"<span color='%s'>| CPU:%s%s|内存:%s %s| 流量 ↓%s↑%s| 电量:%s| 泰安 %s %s |</span>\"\n"
+#define	 out_msg	"conkytext.text = \"<span color='%s'>| CPU:%s%s|内存:%s%s| 流量 ↓%s↑%s| 电量:%s| 泰安 %s %s |</span>\"\n"
 //macro define
 #define	 zero(A)	memset(A,0,sizeof(A))
 #define  sys_log(a,b)	openlog(a,LOG_PID,LOG_USER);syslog(LOG_NOTICE,b);closelog();

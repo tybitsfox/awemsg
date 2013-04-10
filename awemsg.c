@@ -9,9 +9,9 @@ int main(int argc,char** argv)
 	char* av[]={weather,0};
 	int i,j,job[jc];
 	static int k=0;
-	set_unique(argv[0]);
 	if(chg_daemon()!=0)
 		exit(0);
+	set_unique(argv[0]);
 	sys_log(argv[0],"awesome_panel write tool ready\n");
 	get_config();
 	//为保证正常获取，执行三次
@@ -436,7 +436,7 @@ void get_net()
 void set_unique(char *c)
 {
 	int fd1,fd2,i,j,k;
-	char buf[100],cmd[100],*ch;
+	char bb[500],buf[100],cmd[100],*ch;
 	pid_t pid;
 	pid=getpid();
 	zero(cmd);
@@ -448,7 +448,6 @@ void set_unique(char *c)
 	}
 	memcpy(cmd,ch,strlen(ch));
 	//ch=getenv("_");
-	memcpy(cmd,c,strlen(c));//save path name
 	fd1=open(tmpfile,O_RDONLY|O_CREAT,0644);
 	if(fd1<0)
 	{
@@ -468,10 +467,9 @@ void set_unique(char *c)
 	fd2=open(buf,O_RDONLY);
 	if(fd2<0)
 	{
-		if(errno==2)//没有该进程id对应的文件，该进程已退出
-			return;
-		sys_log(c,"get proc file error\n");
-		return;
+		if(errno!=2)//没有该进程id对应的文件，该进程已退出
+			sys_log(c,"get proc file error\n");
+		goto rep_1;
 	}
 	zero(buf);
 	i=read(fd2,buf,sizeof(buf));
@@ -479,6 +477,12 @@ void set_unique(char *c)
 	if(strstr(buf,cmd)!=NULL)
 	{//find it
 		kill((pid_t)k,9);
+	}
+	else
+	{
+		zero(bb);
+		snprintf(bb,sizeof(bb),"%s--%s\n",buf,cmd);
+		sys_log(c,bb);
 	}
 rep_1:		
 	fd1=open(tmpfile,O_RDWR|O_TRUNC);
